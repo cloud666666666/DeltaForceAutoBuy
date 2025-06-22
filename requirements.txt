@@ -1,7 +1,8 @@
+setuptools>=60.0.0
+wheel>=0.37.0
 keyboard==0.13.5
-numpy==1.24.4
-opencv_contrib_python==4.11.0.86
-opencv_python==4.11.0.86
-opencv_python_headless==4.11.0.86
-PyAutoGUI==0.9.54
-pytesseract==0.3.13
+numpy>=1.21.0
+opencv-python>=4.8.0
+PyAutoGUI>=0.9.50
+pytesseract>=0.3.10
+pywin32>=227
