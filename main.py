@@ -438,7 +438,6 @@ def price_check_flow(card_info, force_buy=False):
             pyautogui.moveTo(click_x, click_y)
             time.sleep(0.05)
             pyautogui.click(click_x, click_y, button='left')
-            time.sleep(0.3)
             
             try:
                 client_x = click_x - offset_x
@@ -447,15 +446,28 @@ def price_check_flow(card_info, force_buy=False):
                 win32gui.SendMessage(game_window['hwnd'], win32con.WM_LBUTTONDOWN, win32con.MK_LBUTTON, lParam)
                 time.sleep(0.02)
                 win32gui.SendMessage(game_window['hwnd'], win32con.WM_LBUTTONUP, 0, lParam)
-                time.sleep(0.2)
             except:
                 pass
         else:
             return False
         
+        # 等待界面加载并循环尝试识别价格，直到成功或超时
         detail_price_region = card_info.get('detail_price_region', card_info.get('price_region'))
+        current_price = None
+        max_attempts = 10  # 最多尝试10次
+        attempt = 0
         
-        current_price = getCardPrice(detail_price_region, coords)
+        while current_price is None and attempt < max_attempts:
+            time.sleep(0.3)  # 每次尝试间隔0.3秒
+            current_price = getCardPrice(detail_price_region, coords)
+            attempt += 1
+            
+            # 如果用户按了停止键，立即退出
+            if not is_running:
+                pyautogui.press('esc')
+                return False
+        
+        # 如果超时仍未识别到价格，按ESC退出
         if current_price is None:
             pyautogui.press('esc')
             time.sleep(0.05)
