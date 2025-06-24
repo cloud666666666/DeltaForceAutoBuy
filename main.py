@@ -867,9 +867,9 @@ def print_price_stats():
         import re
         # 获取日志文件路径，与setup_logger保持一致
         try:
-        if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
+            if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
                 base_dir = os.path.dirname(sys.executable)
-        else:
+            else:
                 base_dir = os.path.dirname(os.path.abspath(__file__))
         except Exception:
             base_dir = os.getcwd()

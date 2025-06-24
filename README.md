@@ -32,57 +32,56 @@
 
 ```
 DeltaForceKeyBot-1/
-├── 启动程序.bat                    # 一键启动脚本(推荐)
-├── 以管理员身份运行.bat            # 管理员权限启动
 ├── main.py                         # 主程序文件
 ├── keys.json                       # 配置文件
 ├── requirements.txt                # Python依赖包
 ├── README.md                       # 使用说明
 ├── .venv/                          # Python虚拟环境
-├── Tesseract/                      # OCR识别引擎
-│   ├── tesseract.exe              # OCR主程序
-│   ├── tessdata/                  # 语言包
-│   └── ...                        # 其他依赖文件
-└── dist/                          # 打包后的exe文件
-    ├── 三角洲行动_自动购买助手.exe  # 主程序(完整版)
-    ├── DeltaForceKeyBot.exe        # 主程序(简化版)
-    └── keys.json                   # 配置文件副本
+└── Tesseract/                      # OCR识别引擎
+    ├── tesseract.exe              # OCR主程序
+    ├── tessdata/                  # 语言包
+    └── ...                        # 其他依赖文件
 ```
 
 ## 🚀 快速开始
 
-### 方式一：使用打包版本（推荐）
+### 系统要求
+- **操作系统**：Windows 10/11
+- **Python版本**：3.8+
+- **游戏**：三角洲行动 (Delta Force)
+- **权限**：管理员权限 (用于键盘热键功能)
 
-1. **直接运行**：
-   ```
-   双击 "启动程序.bat" 
-   ```
-   - 自动以管理员权限启动
-   - 无需Python环境
+### 安装步骤
 
-2. **手动运行**：
-   ```
-   进入 dist 文件夹
-   右键 "三角洲行动_自动购买助手.exe" 
-   选择 "以管理员身份运行"
+1. **克隆项目**：
+   ```bash
+   git clone <repository-url>
+   cd DeltaForceKeyBot-1
    ```
 
-### 方式二：从源码运行
-
-1. **激活虚拟环境**：
+2. **激活虚拟环境**：
    ```bash
    .venv\Scripts\activate
    ```
 
-2. **安装依赖**（首次运行）：
+3. **安装依赖**（首次运行）：
    ```bash
    pip install -r requirements.txt
    ```
 
-3. **运行程序**：
+4. **运行程序**：
    ```bash
    python main.py
    ```
+
+### 管理员权限运行
+如需使用热键功能，请以管理员身份运行：
+```bash
+# 右键命令提示符 → 以管理员身份运行
+cd /d "项目路径"
+.venv\Scripts\activate
+python main.py
+```
 
 ## ⚙️ 配置说明
 
@@ -140,7 +139,7 @@ DeltaForceKeyBot-1/
 ### 2. 启动流程
 
 1. **配置游戏窗口**（见上面说明）
-2. **运行程序**：双击 `启动程序.bat`
+2. **运行程序**：`python main.py`
 3. **首次配置**：根据提示设置参数
 4. **开始监控**：按F8开始或等待定时启动
 
@@ -163,14 +162,14 @@ DeltaForceKeyBot-1/
 ## 🔧 常见问题与解决方案
 
 ### Q1: 程序无法启动
-**A: 权限和路径问题**
-- ✅ 使用 `启动程序.bat` 自动获取管理员权限
-- ✅ 确保程序路径不包含中文字符
-- ✅ 检查是否有杀毒软件阻止
+**A: 环境和权限问题**
+- ✅ 确保已激活虚拟环境：`.venv\Scripts\activate`
+- ✅ 安装所有依赖：`pip install -r requirements.txt`
+- ✅ 以管理员身份运行命令提示符（用于热键功能）
 
 ### Q2: 热键不工作 (F8/F9无反应)
 **A: 权限问题**
-- ✅ 必须以管理员身份运行
+- ✅ 必须以管理员身份运行命令提示符
 - ✅ 检查其他程序是否占用了热键
 
 ### Q3: 价格识别不准确
@@ -221,7 +220,6 @@ DeltaForceKeyBot-1/
 
 ### 🔐 权限要求
 - 需要管理员权限才能使用热键功能
-- `启动程序.bat` 会自动请求权限
 - 如果拒绝权限，只能使用定时功能
 
 ### 🕐 时区说明
@@ -239,32 +237,41 @@ DeltaForceKeyBot-1/
 - **keyboard** - 键盘监听
 - **pywin32** - Windows API
 
-### 重新打包
-如果需要重新打包程序：
+### 开发环境设置
 ```bash
+# 克隆项目
+git clone <repository-url>
+cd DeltaForceKeyBot-1
+
+# 创建虚拟环境（如果不存在）
+python -m venv .venv
+
 # 激活虚拟环境
 .venv\Scripts\activate
 
-# 使用spec文件打包
-pyinstaller build_exe.spec --clean
+# 安装依赖
+pip install -r requirements.txt
 
-# 或使用直接命令
-pyinstaller --onefile --console --name "三角洲行动_自动购买助手" main.py
+# 运行程序
+python main.py
 ```
 
 ## 📝 更新日志
 
-### v2.1.0 (当前版本)
-- ✅ 修复打包后配置文件路径问题
+### v2.2.0 (当前版本)
+- ✅ 修复配置文件路径问题
 - ✅ 优化OCR识别准确率
 - ✅ 添加价格统计功能
 - ✅ 改进配置编辑器
 - ✅ 简化日志系统
-- ✅ 支持双exe版本（完整版和简化版）
-- ✅ 添加一键启动脚本
+- ✅ 移除exe打包，专注源码运行
+
+### v2.1.0
+- 支持双exe版本（完整版和简化版）
+- 添加一键启动脚本
 
 ### v2.0.0
-- 🎉 重构核心功能
+- 重构核心功能
 - 基础价格监控功能
 - 自动购买机制
 - 热键控制
