@@ -1,7 +1,7 @@
 {
     "keys": [
         {
-            "max_price": 99999999999999999999,
+            "max_price": 1323,
             "position": [
                 0.3517,
                 0.2678
@@ -17,7 +17,8 @@
                 ]
             },
             "buyAmount": 3,
-            "scheduledTime": "17:49"
+            "scheduledTime": "20:58",
+            "runDuration": 0.1
         }
     ]
 }

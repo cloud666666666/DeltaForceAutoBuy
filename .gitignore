@@ -6,11 +6,71 @@ __pycache__/
 # C extensions
 *.so
 
+# 虚拟环境（不上传，用户可自己创建）
+.venv/
+venv/
+env/
+ENV/
+.env
+
+# PyInstaller构建文件
+build/
+# 保留dist目录结构，但排除大文件
+dist/*.exe
+
+# IDE和编辑器
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# 操作系统文件
+.DS_Store
+Thumbs.db
+ehthumbs.db
+
+# 日志和临时文件
+*.log
+price_log.txt
+*.tmp
+*.temp
+
+# 备份文件
+*.bak
+*.backup
+
+# 测试和覆盖率
+test_*.py
+*_test.py
+.pytest_cache/
+.coverage
+htmlcov/
+
+# 调试文件
+debug_*.png
+screenshot_*.png
+
+# Python包管理
+*.egg-info/
+pip-log.txt
+pip-delete-this-directory.txt
+
+# 注释：以下文件会被包含在仓库中
+# ✅ main.py - 主程序源码
+# ✅ keys.json - 配置文件模板
+# ✅ requirements.txt - Python依赖列表
+# ✅ README.md - 使用说明文档
+# ✅ *.bat - 启动脚本
+# ✅ *.spec - PyInstaller配置文件
+# ✅ Tesseract/ - OCR引擎和语言包
+# ✅ dist/keys.json - 配置文件副本
+# ❌ dist/*.exe - 打包后的可执行文件（太大）
+
 # Distribution / packaging
 .Python
 build/
 develop-eggs/
-dist/
 downloads/
 eggs/
 .eggs/
@@ -25,13 +85,77 @@ wheels/
 *.egg
 MANIFEST
 
+# PyInstaller 构建目录（但保留spec文件）
+build/
+
+# 虚拟环境（不上传，太大且可重建）
+.env
+.venv/
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# IDE 配置
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS 生成的文件
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# 日志文件（运行时生成）
+*.log
+price_log.txt
+
+# 临时文件
+*.tmp
+*.temp
+
+# 备份文件
+*.bak
+*.backup
+
+# 测试相关
+test_*.py
+*_test.py
+.pytest_cache/
+.coverage
+
+# 调试文件和截图
+debug_*.png
+screenshot_*.png
+
+# 其他Python相关
+*.cover
+.hypothesis/
+
+# 特定忽略的大文件（但保留程序运行必需的文件）
+# 注意：以下文件应该被包含在仓库中
+# !main.py - 主程序
+# !keys.json - 配置文件
+# !requirements.txt - 依赖列表
+# !README.md - 说明文档
+# !*.bat - 启动脚本
+# !*.spec - 打包配置（但忽略自动生成的）
+# !Tesseract/ - OCR引擎（必需）
+
 # PyInstaller
 #  Usually these files are written by a python script from a template
 #  before PyInstaller builds the exe, so as to inject date/other infos into it.
 *.manifest
 *.spec
 
-# Installer logs
+# PyInstaller logs
 pip-log.txt
 pip-delete-this-directory.txt
 
@@ -52,7 +176,6 @@ coverage.xml
 *.pot
 
 # Django stuff:
-*.log
 local_settings.py
 db.sqlite3
 
@@ -80,15 +203,6 @@ celerybeat-schedule
 
 # SageMath parsed files
 *.sage.py
-
-# Environments
-.env
-.venv
-env/
-venv/
-ENV/
-env.bak/
-venv.bak/
 
 # Spyder project settings
 .spyderproject
@@ -125,7 +239,6 @@ ehthumbs.db
 Thumbs.db
 
 # Project specific files
-debug_*.png
 *.png
 *.jpg
 *.jpeg
