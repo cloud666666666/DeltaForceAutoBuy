@@ -8,16 +8,16 @@
 
 ## 🎬 快速上手视频
 
-想要快速了解如何使用？观看我们的运行演示视频：
+想要快速了解如何使用？可以下载运行演示视频：
 
 <div align="center">
   <a href="https://github.com/cloud666666666/DeltaForceAutoBuy/raw/main/docs/Running.mp4">
-    <img src="https://img.shields.io/badge/🎬_点击观看-运行演示视频-red?style=for-the-badge&logo=youtube" alt="运行演示视频" />
+    <img src="https://img.shields.io/badge/⬇️_点击下载-运行演示视频-blue?style=for-the-badge&logo=download" alt="下载演示视频" />
   </a>
 </div>
 
 <div align="center">
-  <strong>👆 点击上方按钮观看完整演示视频 👆</strong>
+  <strong>👆 点击上方按钮下载演示视频到本地观看 👆</strong>
 </div>
 
 > 💡 **视频说明**：演示了从程序启动到自动购买的完整流程，包括配置设置、游戏窗口识别、价格监控和自动购买等核心功能。
@@ -29,10 +29,6 @@
 - 🛒 自动购买流程演示
 - ⚙️ 配置参数调整
 - 📊 运行统计和日志查看
-
-**📱 其他观看方式：**
-- [📺 在GitHub中预览](https://github.com/cloud666666666/DeltaForceAutoBuy/blob/main/docs/Running.mp4)
-- [⬇️ 下载到本地观看](https://github.com/cloud666666666/DeltaForceAutoBuy/raw/main/docs/Running.mp4)
 
 ## ✨ 主要功能
 
