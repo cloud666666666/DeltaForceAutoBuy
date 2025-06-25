@@ -6,6 +6,22 @@
 
 这是一个专为《三角洲行动》游戏设计的自动化购买助手，能够智能监控门卡价格并在符合条件时自动购买。支持定时启动、价格监控、OCR识别等多种功能，让您轻松获得心仪的游戏道具。
 
+## 🎬 快速上手视频
+
+想要快速了解如何使用？观看我们的运行演示视频：
+
+https://github.com/cloud666666666/DeltaForceAutoBuy/raw/main/docs/Running.mp4
+
+> 💡 **视频说明**：演示了从程序启动到自动购买的完整流程，包括配置设置、游戏窗口识别、价格监控和自动购买等核心功能。
+
+**视频内容概览：**
+- 🎯 程序启动和初始配置
+- 🎮 游戏窗口设置和识别
+- 💰 价格监控和OCR识别
+- 🛒 自动购买流程演示
+- ⚙️ 配置参数调整
+- 📊 运行统计和日志查看
+
 ## ✨ 主要功能
 
 ### 🎯 核心功能
@@ -31,11 +47,15 @@
 ## 📁 文件结构
 
 ```
-DeltaForceKeyBot-1/
+DeltaForceAutoBuy/
 ├── main.py                         # 主程序文件
 ├── keys.json                       # 配置文件
 ├── requirements.txt                # Python依赖包
 ├── README.md                       # 使用说明
+├── LICENSE                         # MIT许可证
+├── docs/                           # 文档和媒体文件
+│   ├── Running.mp4                 # 运行演示视频
+│   └── wechat_reward.jpg           # 微信打赏码
 ├── .venv/                          # Python虚拟环境
 └── Tesseract/                      # OCR识别引擎
     ├── tesseract.exe              # OCR主程序
@@ -55,8 +75,8 @@ DeltaForceKeyBot-1/
 
 1. **克隆项目**：
    ```bash
-   git clone <repository-url>
-   cd DeltaForceKeyBot-1
+   git clone https://github.com/cloud666666666/DeltaForceAutoBuy.git
+   cd DeltaForceAutoBuy
    ```
 
 2. **激活虚拟环境**：
