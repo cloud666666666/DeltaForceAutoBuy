@@ -654,12 +654,14 @@ def price_check_flow(card_info, force_buy=False, debug_mode=True):
             try:
                 if game_window and game_window.get('hwnd'):
                     win32gui.SetForegroundWindow(game_window['hwnd'])
-                    time.sleep(0.05)
+                    # 减少等待时间，从0.05秒减少到0.02秒
+                    time.sleep(0.02)
             except:
                 pass
             
             pyautogui.moveTo(click_x, click_y)
-            time.sleep(0.05)
+            # 减少等待时间，从0.05秒减少到0.02秒
+            time.sleep(0.02)
             pyautogui.click(click_x, click_y, button='left')
             
             try:
@@ -667,7 +669,8 @@ def price_check_flow(card_info, force_buy=False, debug_mode=True):
                 client_y = click_y - offset_y
                 lParam = (client_y << 16) | (client_x & 0xFFFF)
                 win32gui.SendMessage(game_window['hwnd'], win32con.WM_LBUTTONDOWN, win32con.MK_LBUTTON, lParam)
-                time.sleep(0.02)
+                # 这个延迟是必要的，但可以略微减少
+                time.sleep(0.01)
                 win32gui.SendMessage(game_window['hwnd'], win32con.WM_LBUTTONUP, 0, lParam)
             except:
                 pass
@@ -681,7 +684,7 @@ def price_check_flow(card_info, force_buy=False, debug_mode=True):
         attempt = 0
         
         while current_price is None and attempt < max_attempts:
-            # time.sleep(0.3)  # 每次尝试间隔0.3秒
+            # 不再需要每次尝试之间的延迟，OCR识别本身就需要时间
             current_price = getCardPrice(detail_price_region, coords, debug_mode=debug_mode)
             attempt += 1
             
@@ -693,7 +696,6 @@ def price_check_flow(card_info, force_buy=False, debug_mode=True):
         # 如果超时仍未识别到价格，按ESC退出
         if current_price is None:
             pyautogui.press('esc')
-            # time.sleep(0.05)
             return False
         
     except Exception as e:
@@ -738,9 +740,12 @@ def price_check_flow(card_info, force_buy=False, debug_mode=True):
             
             # print(f"🖱️ 点击购买按钮位置: ({buy_x}, {buy_y})")
             pyautogui.moveTo(buy_x, buy_y)
-            time.sleep(0.1)
+            # 减少等待时间，从0.1秒减少到0.05秒
+            time.sleep(0.05)
             pyautogui.click()
-            time.sleep(0.4)
+            # 购买后的等待时间不能太短，否则可能导致购买失败
+            # 但可以从0.4秒减少到0.3秒
+            time.sleep(0.3)
             
             print(f"✅ 已购买门卡, 价格: {current_price:,}")
             # 购买成功不记录日志，只在控制台显示
@@ -753,7 +758,8 @@ def price_check_flow(card_info, force_buy=False, debug_mode=True):
             return False
     else:
         pyautogui.press('esc')
-        time.sleep(0.05)  # 最小延时确保ESC生效
+        # 这个延迟是必要的，确保ESC生效，但可以略微减少
+        time.sleep(0.03)
         return False
 
 def start_loop():
@@ -1189,10 +1195,14 @@ def main():
                         i += 1
                     if not is_running:
                         break
-                    time.sleep(0.1)
+                    # 减少每次循环的等待时间，从0.1秒减少到0.05秒
+                    time.sleep(0.05)
                 if is_running and cards_to_buy:
-                    time.sleep(1)
+                    # 减少每次大循环的等待时间，从1秒减少到0.5秒
+                    # 这样可以更快地检测价格变化
+                    time.sleep(0.5)
             else:
+                # 保持1秒检查一次时间，这个是合理的
                 time.sleep(1)  # 每秒检查一次时间
     except KeyboardInterrupt:
         print("\n程序退出")
