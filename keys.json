@@ -1,7 +1,7 @@
 {
     "keys": [
         {
-            "max_price": 1323,
+            "max_price": 9999999999999999999,
             "position": [
                 0.3517,
                 0.2678
@@ -18,7 +18,17 @@
             },
             "buyAmount": 3,
             "scheduledTime": "20:58",
-            "runDuration": 0.1
+            "runDuration": 0.2
         }
-    ]
+    ],
+    "delays": {
+        "window_focus": 0.02,
+        "mouse_move": 0.02,
+        "mouse_down": 0.01,
+        "buy_button": 0.05,
+        "buy_complete": 0.3,
+        "esc_key": 0.03,
+        "loop_interval": 0.05,
+        "main_loop": 0.5
+    }
 }

@@ -18,6 +18,21 @@ import shutil   # 用于清除文件夹
 # 截图保存路径
 SCREENSHOTS_DIR = "screenshots"
 
+# 默认延迟时间配置（秒）
+DEFAULT_DELAYS = {
+    "window_focus": 0.02,     # 窗口前置后等待时间
+    "mouse_move": 0.02,       # 鼠标移动后等待时间
+    "mouse_down": 0.01,       # 鼠标按下后等待时间
+    "buy_button": 0.05,       # 购买按钮点击前等待时间
+    "buy_complete": 0.3,      # 购买后等待时间
+    "esc_key": 0.03,          # ESC按键后等待时间
+    "loop_interval": 0.05,    # 每次循环等待时间
+    "main_loop": 0.5          # 大循环等待时间
+}
+
+# 全局延迟配置，会在加载配置时更新
+delays = DEFAULT_DELAYS.copy()
+
 def clear_screenshots_folder():
     """清除截图文件夹"""
     try:
@@ -320,7 +335,7 @@ def get_game_coordinates():
 
 def load_keys_config():
     """加载钥匙价格配置文件"""
-    global keys_config
+    global keys_config, delays
     if keys_config is not None:
         return keys_config
     
@@ -328,6 +343,14 @@ def load_keys_config():
         with open(CONFIG_FILE, 'r', encoding='utf-8') as f:
             config = json.load(f)
             keys_config = config.get('keys', [])
+            
+            # 加载延迟时间配置（如果存在）
+            if 'delays' in config:
+                for key, value in config['delays'].items():
+                    if key in delays and isinstance(value, (int, float)) and value >= 0:
+                        delays[key] = value
+                print("✅ 已加载自定义延迟配置")
+            
             return keys_config
     except Exception as e:
         print(f"配置文件加载失败: {str(e)}")
@@ -654,14 +677,14 @@ def price_check_flow(card_info, force_buy=False, debug_mode=True):
             try:
                 if game_window and game_window.get('hwnd'):
                     win32gui.SetForegroundWindow(game_window['hwnd'])
-                    # 减少等待时间，从0.05秒减少到0.02秒
-                    time.sleep(0.02)
+                    # 使用配置的窗口前置延迟
+                    time.sleep(delays["window_focus"])
             except:
                 pass
             
             pyautogui.moveTo(click_x, click_y)
-            # 减少等待时间，从0.05秒减少到0.02秒
-            time.sleep(0.02)
+            # 使用配置的鼠标移动延迟
+            time.sleep(delays["mouse_move"])
             pyautogui.click(click_x, click_y, button='left')
             
             try:
@@ -669,8 +692,8 @@ def price_check_flow(card_info, force_buy=False, debug_mode=True):
                 client_y = click_y - offset_y
                 lParam = (client_y << 16) | (client_x & 0xFFFF)
                 win32gui.SendMessage(game_window['hwnd'], win32con.WM_LBUTTONDOWN, win32con.MK_LBUTTON, lParam)
-                # 这个延迟是必要的，但可以略微减少
-                time.sleep(0.01)
+                # 使用配置的鼠标按下延迟
+                time.sleep(delays["mouse_down"])
                 win32gui.SendMessage(game_window['hwnd'], win32con.WM_LBUTTONUP, 0, lParam)
             except:
                 pass
@@ -740,12 +763,11 @@ def price_check_flow(card_info, force_buy=False, debug_mode=True):
             
             # print(f"🖱️ 点击购买按钮位置: ({buy_x}, {buy_y})")
             pyautogui.moveTo(buy_x, buy_y)
-            # 减少等待时间，从0.1秒减少到0.05秒
-            time.sleep(0.05)
+            # 使用配置的购买按钮延迟
+            time.sleep(delays["buy_button"])
             pyautogui.click()
-            # 购买后的等待时间不能太短，否则可能导致购买失败
-            # 但可以从0.4秒减少到0.3秒
-            time.sleep(0.3)
+            # 使用配置的购买完成延迟
+            time.sleep(delays["buy_complete"])
             
             print(f"✅ 已购买门卡, 价格: {current_price:,}")
             # 购买成功不记录日志，只在控制台显示
@@ -758,8 +780,8 @@ def price_check_flow(card_info, force_buy=False, debug_mode=True):
             return False
     else:
         pyautogui.press('esc')
-        # 这个延迟是必要的，确保ESC生效，但可以略微减少
-        time.sleep(0.03)
+        # 使用配置的ESC按键延迟
+        time.sleep(delays["esc_key"])
         return False
 
 def start_loop():
@@ -825,6 +847,7 @@ def edit_config():
         print("  2 - 修改购买数量")
         print("  3 - 修改开始时间")
         print("  4 - 修改运行时长")
+        print("  5 - 修改延迟时间配置")
         print("  s - 保存并退出")
         print("  q - 不保存退出")
         
@@ -856,6 +879,9 @@ def edit_config():
             elif choice == '4':
                 # 修改运行时长
                 edit_end_time(card)
+            elif choice == '5':
+                # 修改延迟时间配置
+                edit_delays(config)
             else:
                 print("❌ 无效选择")
         except KeyboardInterrupt:
@@ -965,6 +991,91 @@ def edit_end_time(card):
             print("❌ 请输入有效的数字")
         except KeyboardInterrupt:
             return
+
+def edit_delays(config):
+    """修改延迟时间配置"""
+    global delays
+    
+    # 确保config中有delays部分
+    if 'delays' not in config:
+        config['delays'] = DEFAULT_DELAYS.copy()
+    
+    print("\n=== 延迟时间配置 ===")
+    print("所有时间单位为秒，可以使用小数（如0.05表示50毫秒）")
+    print("这些设置影响程序的操作速度和响应性")
+    
+    while True:
+        # 显示当前延迟配置
+        print("\n📋 当前延迟时间配置:")
+        print(f"  1 - 窗口前置延迟: {config['delays'].get('window_focus', DEFAULT_DELAYS['window_focus'])}秒")
+        print(f"  2 - 鼠标移动延迟: {config['delays'].get('mouse_move', DEFAULT_DELAYS['mouse_move'])}秒")
+        print(f"  3 - 鼠标按下延迟: {config['delays'].get('mouse_down', DEFAULT_DELAYS['mouse_down'])}秒")
+        print(f"  4 - 购买按钮延迟: {config['delays'].get('buy_button', DEFAULT_DELAYS['buy_button'])}秒")
+        print(f"  5 - 购买完成延迟: {config['delays'].get('buy_complete', DEFAULT_DELAYS['buy_complete'])}秒")
+        print(f"  6 - ESC按键延迟: {config['delays'].get('esc_key', DEFAULT_DELAYS['esc_key'])}秒")
+        print(f"  7 - 循环间隔延迟: {config['delays'].get('loop_interval', DEFAULT_DELAYS['loop_interval'])}秒")
+        print(f"  8 - 主循环延迟: {config['delays'].get('main_loop', DEFAULT_DELAYS['main_loop'])}秒")
+        print(f"  9 - 恢复默认设置")
+        print(f"  0 - 返回上级菜单")
+        
+        try:
+            choice = input("\n请选择要修改的延迟 (0-9): ").strip()
+            
+            if choice == '0':
+                # 应用配置到全局变量
+                for key, value in config['delays'].items():
+                    if key in delays:
+                        delays[key] = value
+                return
+                
+            elif choice == '9':
+                # 恢复默认设置
+                config['delays'] = DEFAULT_DELAYS.copy()
+                print("✅ 已恢复默认延迟设置")
+                continue
+                
+            elif choice in ['1', '2', '3', '4', '5', '6', '7', '8']:
+                # 映射选择到配置键
+                delay_keys = {
+                    '1': 'window_focus',
+                    '2': 'mouse_move',
+                    '3': 'mouse_down',
+                    '4': 'buy_button',
+                    '5': 'buy_complete',
+                    '6': 'esc_key',
+                    '7': 'loop_interval',
+                    '8': 'main_loop'
+                }
+                
+                delay_key = delay_keys[choice]
+                current_value = config['delays'].get(delay_key, DEFAULT_DELAYS[delay_key])
+                
+                # 显示当前值和默认值
+                print(f"\n当前值: {current_value}秒")
+                print(f"默认值: {DEFAULT_DELAYS[delay_key]}秒")
+                
+                # 获取新值
+                new_value_input = input(f"请输入新的延迟时间 (秒)，直接回车取消: ").strip()
+                
+                if new_value_input:
+                    try:
+                        new_value = float(new_value_input)
+                        if new_value < 0:
+                            print("❌ 延迟时间不能为负数")
+                            continue
+                            
+                        config['delays'][delay_key] = new_value
+                        print(f"✅ 已更新 {delay_key} 延迟为 {new_value}秒")
+                    except ValueError:
+                        print("❌ 请输入有效的数字")
+            else:
+                print("❌ 无效选择")
+                
+        except KeyboardInterrupt:
+            print("\n返回上级菜单")
+            return
+        except Exception as e:
+            print(f"❌ 输入错误: {str(e)}")
 
 def print_price_stats():
     """统计并显示本次日志的价格数据"""
@@ -1195,14 +1306,12 @@ def main():
                         i += 1
                     if not is_running:
                         break
-                    # 减少每次循环的等待时间，从0.1秒减少到0.05秒
-                    time.sleep(0.05)
+                    # 使用配置的循环间隔延迟
+                    time.sleep(delays["loop_interval"])
                 if is_running and cards_to_buy:
-                    # 减少每次大循环的等待时间，从1秒减少到0.5秒
-                    # 这样可以更快地检测价格变化
-                    time.sleep(0.5)
+                    # 使用配置的主循环延迟
+                    time.sleep(delays["main_loop"])
             else:
-                # 保持1秒检查一次时间，这个是合理的
                 time.sleep(1)  # 每秒检查一次时间
     except KeyboardInterrupt:
         print("\n程序退出")
