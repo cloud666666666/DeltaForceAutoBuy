@@ -13,6 +13,40 @@ import datetime  # 用于时间处理
 import sys
 import ctypes  # 用于检查管理员权限
 import logging  # 用于日志记录
+import shutil   # 用于清除文件夹
+
+# 截图保存路径
+SCREENSHOTS_DIR = "screenshots"
+
+def clear_screenshots_folder():
+    """清除截图文件夹"""
+    try:
+        # 确保路径存在
+        if not os.path.exists(SCREENSHOTS_DIR):
+            os.makedirs(SCREENSHOTS_DIR)
+            print(f"✅ 创建截图文件夹: {SCREENSHOTS_DIR}")
+            return
+            
+        # 清除文件夹中的所有文件
+        for filename in os.listdir(SCREENSHOTS_DIR):
+            file_path = os.path.join(SCREENSHOTS_DIR, filename)
+            try:
+                if os.path.isfile(file_path):
+                    os.unlink(file_path)
+                elif os.path.isdir(file_path):
+                    shutil.rmtree(file_path)
+            except Exception as e:
+                print(f"❌ 无法删除文件 {file_path}: {e}")
+        
+        print(f"✅ 已清除截图文件夹: {SCREENSHOTS_DIR}")
+    except Exception as e:
+        print(f"❌ 清除截图文件夹失败: {e}")
+        # 如果清除失败，尝试创建文件夹
+        try:
+            if not os.path.exists(SCREENSHOTS_DIR):
+                os.makedirs(SCREENSHOTS_DIR)
+        except:
+            pass
 
 def is_admin():
     """检查是否以管理员身份运行"""
@@ -371,6 +405,24 @@ def getCardPrice(price_region=None, coords=None, debug_mode=True):
             # 显示调试窗口
             cv2.imshow("游戏窗口 - 价格识别区域", full_screenshot)
             cv2.waitKey(1)  # 显示1毫秒，不阻塞程序
+            
+            # 保存截图
+            timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S_%f")[:-3]
+            
+            # 确保screenshots文件夹存在
+            if not os.path.exists(SCREENSHOTS_DIR):
+                try:
+                    os.makedirs(SCREENSHOTS_DIR)
+                except:
+                    pass
+            
+            # 保存全屏带标记的截图
+            full_img_path = os.path.join(SCREENSHOTS_DIR, f"full_{timestamp}.jpg")
+            cv2.imwrite(full_img_path, full_screenshot)
+            
+            # 保存ROI区域截图
+            roi_img_path = os.path.join(SCREENSHOTS_DIR, f"roi_{timestamp}.jpg")
+            cv2.imwrite(roi_img_path, roi_screenshot)
         else:
             # 直接截取识别区域
             roi_screenshot = take_screenshot(region=region)
@@ -397,6 +449,11 @@ def getCardPrice(price_region=None, coords=None, debug_mode=True):
         # 预处理图像
         processed_img = preprocess_image(roi_screenshot)
         
+        # 如果是调试模式，保存预处理后的图像
+        if debug_mode:
+            processed_img_path = os.path.join(SCREENSHOTS_DIR, f"processed_{timestamp}.jpg")
+            cv2.imwrite(processed_img_path, processed_img)
+        
         # 优化后的OCR识别方法 - 只使用最成功的配置
         ocr_configs = [
             # 配置1：PSM 6 统一文本块模式（从日志看最成功）
@@ -422,13 +479,26 @@ def getCardPrice(price_region=None, coords=None, debug_mode=True):
                     if cleaned_text and cleaned_text.isdigit():
                         price = int(cleaned_text)
                         if 10000 <= price <= 100000000:
-                            # 不记录OCR识别成功信息，只在价格比较时记录
+                            # 如果是调试模式，保存识别结果到文件名
+                            if debug_mode:
+                                # 创建一个结果文件，包含识别到的价格
+                                result_path = os.path.join(SCREENSHOTS_DIR, f"result_{timestamp}_{price}.txt")
+                                with open(result_path, 'w') as f:
+                                    f.write(f"识别价格: {price}\n")
+                                    f.write(f"配置: {config_name}\n")
+                                    f.write(f"图像类型: {img_type}\n")
                             return price
                         
                 except Exception:
                     continue
         
         # 所有方法都失败时才记录失败
+        if debug_mode:
+            # 创建一个失败记录文件
+            fail_path = os.path.join(SCREENSHOTS_DIR, f"fail_{timestamp}.txt")
+            with open(fail_path, 'w') as f:
+                f.write("识别失败\n")
+        
         return None
     except Exception as e:
         return None
@@ -930,6 +1000,9 @@ def main():
     global is_running, is_paused, keys_config
     
     print("=== 三角洲行动 自动购买助手 ===")
+    
+    # 清除之前的截图
+    clear_screenshots_folder()
     
     # 程序启动不记录日志
     
