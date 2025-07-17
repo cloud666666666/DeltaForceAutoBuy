@@ -124,16 +124,9 @@ def get_config_file_path():
     
     config_file = os.path.join(base_dir, 'keys.json')
     
-    # 如果配置文件不存在，从资源目录复制一份
+    # 不再自动创建配置文件，而是检查文件是否存在
     if not os.path.exists(config_file):
-        try:
-            default_config = get_resource_path('keys.json')
-            if os.path.exists(default_config):
-                import shutil
-                shutil.copy2(default_config, config_file)
-                print(f"✅ 已创建配置文件: {config_file}")
-        except Exception as e:
-            print(f"⚠️ 创建配置文件失败: {e}")
+        print(f"⚠️ 配置文件不存在: {config_file}")
     
     return config_file
 
@@ -333,14 +326,22 @@ def get_game_coordinates():
     }
 
 def load_keys_config():
-    """加载钥匙价格配置文件"""
+    """加载钥匙价格配置文件，如果配置文件不存在或无效则抛出异常"""
     global keys_config, delays
     if keys_config is not None:
         return keys_config
     
     try:
+        if not os.path.exists(CONFIG_FILE):
+            raise FileNotFoundError(f"配置文件不存在: {CONFIG_FILE}")
+            
         with open(CONFIG_FILE, 'r', encoding='utf-8') as f:
             config = json.load(f)
+            
+            # 检查配置文件是否包含必要的keys字段
+            if 'keys' not in config or not isinstance(config['keys'], list) or len(config['keys']) == 0:
+                raise ValueError("配置文件格式错误: 'keys'字段不存在或为空")
+                
             keys_config = config.get('keys', [])
             
             # 加载延迟时间配置（如果存在）
@@ -360,9 +361,18 @@ def load_keys_config():
                 print("✅ 已加载自定义延迟配置")
             
             return keys_config
+    except json.JSONDecodeError as e:
+        error_msg = f"配置文件格式错误: {str(e)}"
+        print(f"❌ {error_msg}")
+        raise ValueError(error_msg)
+    except FileNotFoundError as e:
+        error_msg = f"配置文件不存在: {str(e)}"
+        print(f"❌ {error_msg}")
+        raise
     except Exception as e:
-        print(f"配置文件加载失败: {str(e)}")
-        return []
+        error_msg = f"配置文件加载失败: {str(e)}"
+        print(f"❌ {error_msg}")
+        raise
 
 def take_screenshot(region):
     """截图功能"""
@@ -1184,10 +1194,14 @@ def main():
     
     # 程序启动不记录日志
     
-    keys_config = load_keys_config()
-    if not keys_config:
-        print("❌ 无法加载配置文件")
-        # 配置文件加载失败不记录日志
+    try:
+        keys_config = load_keys_config()
+        if not keys_config:
+            print("❌ 配置文件中没有有效的门卡配置")
+            return
+    except Exception as e:
+        print(f"❌ 配置文件错误: {str(e)}")
+        print("程序无法继续运行，请检查配置文件")
         return
     
     # 过滤出需要购买的门卡（兼容旧的wantBuy和新的buyAmount）
