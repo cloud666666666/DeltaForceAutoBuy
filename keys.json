@@ -49,11 +49,7 @@
         },
         "loop_interval": {
             "value": 0.05,
-            "description": "每次循环等待时间，值太小会增加CPU占用，值太大会降低响应速度"
-        },
-        "main_loop": {
-            "value": 0.5,
-            "description": "大循环等待时间，值越小检测价格越频繁，但CPU占用更高"
+            "description": "每次循环等待时间，值越小检测频率越高，但CPU占用更多"
         }
     }
 }

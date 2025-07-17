@@ -26,8 +26,7 @@ DEFAULT_DELAYS = {
     "buy_button": 0.05,       # 购买按钮点击前等待时间
     "buy_complete": 0.3,      # 购买后等待时间
     "esc_key": 0.03,          # ESC按键后等待时间
-    "loop_interval": 0.05,    # 每次循环等待时间
-    "main_loop": 0.5          # 大循环等待时间
+    "loop_interval": 0.05     # 每次循环等待时间
 }
 
 # 全局延迟配置，会在加载配置时更新
@@ -1032,8 +1031,7 @@ def edit_delays(config):
             ("4", "buy_button", "购买按钮延迟"),
             ("5", "buy_complete", "购买完成延迟"),
             ("6", "esc_key", "ESC按键延迟"),
-            ("7", "loop_interval", "循环间隔延迟"),
-            ("8", "main_loop", "主循环延迟")
+            ("7", "loop_interval", "循环间隔延迟")
         ]
         
         for num, key, name in delay_items:
@@ -1066,7 +1064,7 @@ def edit_delays(config):
                 print("✅ 已恢复默认延迟设置")
                 continue
                 
-            elif choice in ['1', '2', '3', '4', '5', '6', '7', '8']:
+            elif choice in ['1', '2', '3', '4', '5', '6', '7']:
                 # 映射选择到配置键
                 delay_keys = {
                     '1': 'window_focus',
@@ -1075,8 +1073,7 @@ def edit_delays(config):
                     '4': 'buy_button',
                     '5': 'buy_complete',
                     '6': 'esc_key',
-                    '7': 'loop_interval',
-                    '8': 'main_loop'
+                    '7': 'loop_interval'
                 }
                 
                 delay_key = delay_keys[choice]
@@ -1137,8 +1134,7 @@ def get_delay_description(key):
         "buy_button": "购买按钮点击前等待时间，值太小可能导致点击不到正确位置",
         "buy_complete": "购买后等待时间，值太小可能导致购买失败或界面未完全刷新",
         "esc_key": "ESC按键后等待时间，值太小可能导致ESC键未生效就进行下一步",
-        "loop_interval": "每次循环等待时间，值太小会增加CPU占用，值太大会降低响应速度",
-        "main_loop": "大循环等待时间，值越小检测价格越频繁，但CPU占用更高"
+        "loop_interval": "每次循环等待时间，值太小会增加CPU占用，值太大会降低响应速度"
     }
     return descriptions.get(key, "延迟时间配置")
 
@@ -1207,9 +1203,11 @@ def main():
         print("❌ 没有需要购买的门卡")
         return
     
+    # 只使用第一张门卡
+    card = cards_to_buy[0]
+    
     # 显示当前配置
     print(f"\n📋 当前配置:")
-    card = cards_to_buy[0]  # 只显示第一张卡的配置
     price = card.get('max_price', 0)
     amount = card.get('buyAmount', 0)
     start_time = card.get('scheduledTime', '未设置')
@@ -1257,9 +1255,11 @@ def main():
                 print("❌ 没有需要购买的门卡")
                 return
                 
+            # 只使用第一张门卡
+            card = cards_to_buy[0]
+                
             # 显示更新后的配置
             print(f"\n📋 更新后的配置:")
-            card = cards_to_buy[0]  # 只显示第一张卡的配置
             price = card.get('max_price', 0)
             amount = card.get('buyAmount', 0)
             start_time = card.get('scheduledTime', '未设置')
@@ -1297,10 +1297,9 @@ def main():
     # 检查是否有门卡需要定时启动
     def check_auto_start():
         current_time = datetime.datetime.now().strftime("%H:%M")
-        for card in cards_to_buy:
-            scheduled_time = card.get('scheduledTime', '')
-            if scheduled_time and scheduled_time == current_time:
-                return True
+        scheduled_time = card.get('scheduledTime', '')
+        if scheduled_time and scheduled_time == current_time:
+            return True
         return False
 
     # 记录自动启动的时间
@@ -1321,19 +1320,13 @@ def main():
                     start_loop()
                     loop_start_time = time.time()
                     # 获取当前卡的运行时长
-                    if cards_to_buy:
-                        loop_run_duration = float(cards_to_buy[0].get('runDuration', 1))
-                    else:
-                        loop_run_duration = 1.0
+                    loop_run_duration = float(card.get('runDuration', 1))
             
             # 检查运行时长是否到达
             if is_running:
                 if loop_start_time is None:
                     loop_start_time = time.time()
-                    if cards_to_buy:
-                        loop_run_duration = float(cards_to_buy[0].get('runDuration', 1))
-                    else:
-                        loop_run_duration = 1.0
+                    loop_run_duration = float(card.get('runDuration', 1))
                 
                 # 确保loop_run_duration不为None
                 if loop_run_duration is not None:
@@ -1348,34 +1341,20 @@ def main():
                 loop_run_duration = None
 
             if is_running and not is_paused:
-                i = 0
-                while i < len(cards_to_buy) and is_running:
-                    card_info = cards_to_buy[i]
-                    try:
-                        result = price_check_flow(card_info, force_buy=False, debug_mode=debug_mode)
-                        if result:
-                            card_info['buyAmount'] -= 1
-                            print(f"✅ 购买成功！剩余需购买数量: {card_info['buyAmount']}")
-                            if card_info['buyAmount'] <= 0:
-                                cards_to_buy.pop(i)
-                                print(f"🎊 该门卡已购买完成！")
-                            else:
-                                i += 1
-                            if not cards_to_buy:
-                                print("🎉 所有门卡购买完成！")
-                                stop_loop()
-                                break
-                        else:
-                            i += 1
-                    except Exception as e:
-                        i += 1
-                    if not is_running:
-                        break
-                    # 使用配置的循环间隔延迟
-                    time.sleep(delays["loop_interval"])
-                if is_running and cards_to_buy:
-                    # 使用配置的主循环延迟
-                    time.sleep(delays["main_loop"])
+                try:
+                    # 只检查单张门卡
+                    result = price_check_flow(card, force_buy=False, debug_mode=debug_mode)
+                    if result:
+                        card['buyAmount'] -= 1
+                        print(f"✅ 购买成功！剩余需购买数量: {card['buyAmount']}")
+                        if card['buyAmount'] <= 0:
+                            print(f"🎊 门卡已购买完成！")
+                            stop_loop()
+                except Exception as e:
+                    print(f"❌ 检查出错: {str(e)}")
+                
+                # 使用配置的循环间隔延迟
+                time.sleep(delays["loop_interval"])
             else:
                 time.sleep(1)  # 每秒检查一次时间
     except KeyboardInterrupt:
