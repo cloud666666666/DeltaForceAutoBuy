@@ -102,9 +102,14 @@ def get_resource_path(relative_path):
     """获取资源文件的绝对路径，支持开发环境和打包后的exe"""
     try:
         # PyInstaller创建临时文件夹，并将路径存储在_MEIPASS中
-        base_path = sys._MEIPASS
+        # 注意：_MEIPASS只在PyInstaller打包后存在
+        if getattr(sys, 'frozen', False):
+            base_path = getattr(sys, '_MEIPASS', os.path.dirname(os.path.abspath(__file__)))
+        else:
+            # 开发环境中使用脚本所在目录，而不是当前工作目录
+            base_path = os.path.dirname(os.path.abspath(__file__))
     except Exception:
-        # 开发环境中使用脚本所在目录，而不是当前工作目录
+        # 如果出现任何错误，使用当前目录
         base_path = os.path.dirname(os.path.abspath(__file__))
     
     return os.path.join(base_path, relative_path)
@@ -113,7 +118,7 @@ def get_resource_path(relative_path):
 def get_config_file_path():
     """获取配置文件路径，确保在exe所在目录而不是临时目录"""
     try:
-        if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
+        if getattr(sys, 'frozen', False):
             # 打包后的exe，使用exe文件所在目录
             base_dir = os.path.dirname(sys.executable)
         else:
@@ -675,7 +680,7 @@ def getCardName(name_region=None, coords=None):
 
 def price_check_flow(card_info, force_buy=False, debug_mode=True):
     """价格检查主流程"""
-    global is_paused
+    global is_paused, game_window
     
     try:
         coords = get_game_coordinates()
@@ -693,12 +698,13 @@ def price_check_flow(card_info, force_buy=False, debug_mode=True):
             click_y = offset_y + int(game_height * position[1])
             
             try:
-                if game_window and game_window.get('hwnd'):
+                # 确保game_window不为None且有hwnd属性
+                if game_window is not None and isinstance(game_window, dict) and 'hwnd' in game_window:
                     win32gui.SetForegroundWindow(game_window['hwnd'])
                     # 使用配置的窗口前置延迟
                     time.sleep(delays["window_focus"])
-            except:
-                pass
+            except Exception as e:
+                print(f"⚠️ 窗口前置失败: {str(e)}")
             
             pyautogui.moveTo(click_x, click_y)
             # 使用配置的鼠标移动延迟
@@ -706,15 +712,17 @@ def price_check_flow(card_info, force_buy=False, debug_mode=True):
             pyautogui.click(click_x, click_y, button='left')
             
             try:
-                client_x = click_x - offset_x
-                client_y = click_y - offset_y
-                lParam = (client_y << 16) | (client_x & 0xFFFF)
-                win32gui.SendMessage(game_window['hwnd'], win32con.WM_LBUTTONDOWN, win32con.MK_LBUTTON, lParam)
-                # 使用配置的鼠标按下延迟
-                time.sleep(delays["mouse_down"])
-                win32gui.SendMessage(game_window['hwnd'], win32con.WM_LBUTTONUP, 0, lParam)
-            except:
-                pass
+                # 确保game_window不为None且有hwnd属性
+                if game_window is not None and isinstance(game_window, dict) and 'hwnd' in game_window:
+                    client_x = click_x - offset_x
+                    client_y = click_y - offset_y
+                    lParam = (client_y << 16) | (client_x & 0xFFFF)
+                    win32gui.SendMessage(game_window['hwnd'], win32con.WM_LBUTTONDOWN, win32con.MK_LBUTTON, lParam)
+                    # 使用配置的鼠标按下延迟
+                    time.sleep(delays["mouse_down"])
+                    win32gui.SendMessage(game_window['hwnd'], win32con.WM_LBUTTONUP, 0, lParam)
+            except Exception as e:
+                print(f"⚠️ 发送鼠标消息失败: {str(e)}")
         else:
             return False
         
