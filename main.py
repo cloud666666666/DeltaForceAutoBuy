@@ -18,19 +18,8 @@ import shutil   # 用于清除文件夹
 # 截图保存路径
 SCREENSHOTS_DIR = "screenshots"
 
-# 默认延迟时间配置（秒）
-DEFAULT_DELAYS = {
-    "window_focus": 0.02,     # 窗口前置后等待时间
-    "mouse_move": 0.02,       # 鼠标移动后等待时间
-    "mouse_down": 0.01,       # 鼠标按下后等待时间
-    "buy_button": 0.05,       # 购买按钮点击前等待时间
-    "buy_complete": 0.3,      # 购买后等待时间
-    "esc_key": 0.03,          # ESC按键后等待时间
-    "loop_interval": 0.05     # 每次循环等待时间
-}
-
-# 全局延迟配置，会在加载配置时更新
-delays = DEFAULT_DELAYS.copy()
+# 全局延迟配置，会在加载配置时从json文件中加载
+delays = {}
 
 def clear_screenshots_folder():
     """清除截图文件夹"""
@@ -352,8 +341,14 @@ def load_keys_config():
             # 加载延迟时间配置（如果存在）
             if 'delays' in config:
                 delay_config = config['delays']
+                # 初始化默认延迟配置
+                default_delay_keys = [
+                    "window_focus", "mouse_move", "mouse_down", 
+                    "buy_button", "buy_complete", "esc_key", "loop_interval"
+                ]
+                
                 # 检查是否是新格式（带描述的对象）
-                for key in DEFAULT_DELAYS.keys():
+                for key in default_delay_keys:
                     if key in delay_config:
                         # 新格式：{"value": 0.02, "description": "..."}
                         if isinstance(delay_config[key], dict) and 'value' in delay_config[key]:
@@ -363,7 +358,25 @@ def load_keys_config():
                         # 旧格式：直接数值
                         elif isinstance(delay_config[key], (int, float)) and delay_config[key] >= 0:
                             delays[key] = delay_config[key]
+                
+                # 确保所有必要的延迟配置都存在
+                for key in default_delay_keys:
+                    if key not in delays:
+                        # 如果配置中没有，使用安全的默认值
+                        delays[key] = 0.01
+                        
                 print("✅ 已加载自定义延迟配置")
+            else:
+                # 如果配置文件中没有延迟配置，使用安全的默认值
+                delays = {
+                    "window_focus": 0.01,
+                    "mouse_move": 0.01,
+                    "mouse_down": 0.01,
+                    "buy_button": 0,
+                    "buy_complete": 0,
+                    "esc_key": 0.01,
+                    "loop_interval": 0.01
+                }
             
             return keys_config
     except json.JSONDecodeError as e:
@@ -789,10 +802,10 @@ def price_check_flow(card_info, force_buy=False, debug_mode=True):
             
             # print(f"🖱️ 点击购买按钮位置: ({buy_x}, {buy_y})")
             pyautogui.moveTo(buy_x, buy_y)
-            # 使用配置的购买按钮延迟
+            # 购买按钮点击前等待
             time.sleep(delays["buy_button"])
             pyautogui.click()
-            # 使用配置的购买完成延迟
+            # 购买完成后等待
             time.sleep(delays["buy_complete"])
             
             print(f"✅ 已购买门卡, 价格: {current_price:,}")
@@ -1022,13 +1035,24 @@ def edit_delays(config):
     """修改延迟时间配置"""
     global delays
     
+    # 安全默认值
+    safe_defaults = {
+        "window_focus": 0.01,
+        "mouse_move": 0.01,
+        "mouse_down": 0.01,
+        "buy_button": 0,
+        "buy_complete": 0,
+        "esc_key": 0.01,
+        "loop_interval": 0.01
+    }
+    
     # 确保config中有delays部分
     if 'delays' not in config:
         config['delays'] = {
             "description": "所有延迟时间单位均为秒，可使用小数点表示毫秒(如0.05=50毫秒)"
         }
         # 添加所有延迟配置
-        for key, value in DEFAULT_DELAYS.items():
+        for key, value in safe_defaults.items():
             config['delays'][key] = {
                 "value": value,
                 "description": get_delay_description(key)
@@ -1065,13 +1089,13 @@ def edit_delays(config):
             
             if choice == '0':
                 # 应用配置到全局变量
-                for key in DEFAULT_DELAYS.keys():
+                for key in safe_defaults.keys():
                     delays[key] = get_delay_value(config['delays'], key)
                 return
                 
             elif choice == '9':
                 # 恢复默认设置
-                for key, value in DEFAULT_DELAYS.items():
+                for key, value in safe_defaults.items():
                     if isinstance(config['delays'].get(key), dict):
                         config['delays'][key]['value'] = value
                     else:
@@ -1099,7 +1123,7 @@ def edit_delays(config):
                 
                 # 显示当前值和默认值
                 print(f"\n当前值: {current_value}秒")
-                print(f"默认值: {DEFAULT_DELAYS[delay_key]}秒")
+                print(f"默认值: {safe_defaults[delay_key]}秒")
                 
                 # 获取新值
                 new_value_input = input(f"请输入新的延迟时间 (秒)，直接回车取消: ").strip()
@@ -1117,7 +1141,7 @@ def edit_delays(config):
                         else:
                             config['delays'][delay_key] = {
                                 "value": new_value,
-                                "description": get_delay_description(delay_key)
+                                "description": get_delay_description(key)
                             }
                         print(f"✅ 已更新 {delay_key} 延迟为 {new_value}秒")
                     except ValueError:
@@ -1140,8 +1164,17 @@ def get_delay_value(delay_config, key):
         # 旧格式：直接数值
         elif isinstance(delay_config[key], (int, float)):
             return delay_config[key]
-    # 默认值
-    return DEFAULT_DELAYS[key]
+    # 安全默认值
+    safe_defaults = {
+        "window_focus": 0.01,
+        "mouse_move": 0.01,
+        "mouse_down": 0.01,
+        "buy_button": 0,
+        "buy_complete": 0,
+        "esc_key": 0.01,
+        "loop_interval": 0.01
+    }
+    return safe_defaults.get(key, 0.01)
 
 def get_delay_description(key):
     """获取延迟配置的描述文本"""

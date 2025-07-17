@@ -39,14 +39,14 @@ price_log.txt
 # 备份文件
 *.bak
 *.backup
-
+dist/
 # 测试和覆盖率
 test_*.py
 *_test.py
 .pytest_cache/
 .coverage
 htmlcov/
-
+*.ico
 # 调试文件
 debug_*.png
 screenshot_*.png
