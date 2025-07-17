@@ -22,13 +22,38 @@
         }
     ],
     "delays": {
-        "window_focus": 0.02,
-        "mouse_move": 0.02,
-        "mouse_down": 0.01,
-        "buy_button": 0.05,
-        "buy_complete": 0.3,
-        "esc_key": 0.03,
-        "loop_interval": 0.05,
-        "main_loop": 0.5
+        "description": "所有延迟时间单位均为秒，可使用小数点表示毫秒(如0.05=50毫秒)",
+        "window_focus": {
+            "value": 0.02,
+            "description": "窗口前置后等待时间，值太小可能导致窗口未完全激活就开始后续操作"
+        },
+        "mouse_move": {
+            "value": 0.02,
+            "description": "鼠标移动后等待时间，值太小可能导致点击位置不准确"
+        },
+        "mouse_down": {
+            "value": 0.01,
+            "description": "鼠标按下后等待时间，影响点击的识别效果"
+        },
+        "buy_button": {
+            "value": 0.05,
+            "description": "购买按钮点击前等待时间，值太小可能导致点击不到正确位置"
+        },
+        "buy_complete": {
+            "value": 0.3,
+            "description": "购买后等待时间，值太小可能导致购买失败或界面未完全刷新"
+        },
+        "esc_key": {
+            "value": 0.03,
+            "description": "ESC按键后等待时间，值太小可能导致ESC键未生效就进行下一步"
+        },
+        "loop_interval": {
+            "value": 0.05,
+            "description": "每次循环等待时间，值太小会增加CPU占用，值太大会降低响应速度"
+        },
+        "main_loop": {
+            "value": 0.5,
+            "description": "大循环等待时间，值越小检测价格越频繁，但CPU占用更高"
+        }
     }
 }

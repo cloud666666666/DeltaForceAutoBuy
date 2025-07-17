@@ -346,9 +346,18 @@ def load_keys_config():
             
             # 加载延迟时间配置（如果存在）
             if 'delays' in config:
-                for key, value in config['delays'].items():
-                    if key in delays and isinstance(value, (int, float)) and value >= 0:
-                        delays[key] = value
+                delay_config = config['delays']
+                # 检查是否是新格式（带描述的对象）
+                for key in DEFAULT_DELAYS.keys():
+                    if key in delay_config:
+                        # 新格式：{"value": 0.02, "description": "..."}
+                        if isinstance(delay_config[key], dict) and 'value' in delay_config[key]:
+                            value = delay_config[key]['value']
+                            if isinstance(value, (int, float)) and value >= 0:
+                                delays[key] = value
+                        # 旧格式：直接数值
+                        elif isinstance(delay_config[key], (int, float)) and delay_config[key] >= 0:
+                            delays[key] = delay_config[key]
                 print("✅ 已加载自定义延迟配置")
             
             return keys_config
@@ -998,7 +1007,15 @@ def edit_delays(config):
     
     # 确保config中有delays部分
     if 'delays' not in config:
-        config['delays'] = DEFAULT_DELAYS.copy()
+        config['delays'] = {
+            "description": "所有延迟时间单位均为秒，可使用小数点表示毫秒(如0.05=50毫秒)"
+        }
+        # 添加所有延迟配置
+        for key, value in DEFAULT_DELAYS.items():
+            config['delays'][key] = {
+                "value": value,
+                "description": get_delay_description(key)
+            }
     
     print("\n=== 延迟时间配置 ===")
     print("所有时间单位为秒，可以使用小数（如0.05表示50毫秒）")
@@ -1007,14 +1024,23 @@ def edit_delays(config):
     while True:
         # 显示当前延迟配置
         print("\n📋 当前延迟时间配置:")
-        print(f"  1 - 窗口前置延迟: {config['delays'].get('window_focus', DEFAULT_DELAYS['window_focus'])}秒")
-        print(f"  2 - 鼠标移动延迟: {config['delays'].get('mouse_move', DEFAULT_DELAYS['mouse_move'])}秒")
-        print(f"  3 - 鼠标按下延迟: {config['delays'].get('mouse_down', DEFAULT_DELAYS['mouse_down'])}秒")
-        print(f"  4 - 购买按钮延迟: {config['delays'].get('buy_button', DEFAULT_DELAYS['buy_button'])}秒")
-        print(f"  5 - 购买完成延迟: {config['delays'].get('buy_complete', DEFAULT_DELAYS['buy_complete'])}秒")
-        print(f"  6 - ESC按键延迟: {config['delays'].get('esc_key', DEFAULT_DELAYS['esc_key'])}秒")
-        print(f"  7 - 循环间隔延迟: {config['delays'].get('loop_interval', DEFAULT_DELAYS['loop_interval'])}秒")
-        print(f"  8 - 主循环延迟: {config['delays'].get('main_loop', DEFAULT_DELAYS['main_loop'])}秒")
+        
+        delay_items = [
+            ("1", "window_focus", "窗口前置延迟"),
+            ("2", "mouse_move", "鼠标移动延迟"),
+            ("3", "mouse_down", "鼠标按下延迟"),
+            ("4", "buy_button", "购买按钮延迟"),
+            ("5", "buy_complete", "购买完成延迟"),
+            ("6", "esc_key", "ESC按键延迟"),
+            ("7", "loop_interval", "循环间隔延迟"),
+            ("8", "main_loop", "主循环延迟")
+        ]
+        
+        for num, key, name in delay_items:
+            # 获取当前值（支持新旧两种格式）
+            current_value = get_delay_value(config['delays'], key)
+            print(f"  {num} - {name}: {current_value}秒")
+            
         print(f"  9 - 恢复默认设置")
         print(f"  0 - 返回上级菜单")
         
@@ -1023,14 +1049,20 @@ def edit_delays(config):
             
             if choice == '0':
                 # 应用配置到全局变量
-                for key, value in config['delays'].items():
-                    if key in delays:
-                        delays[key] = value
+                for key in DEFAULT_DELAYS.keys():
+                    delays[key] = get_delay_value(config['delays'], key)
                 return
                 
             elif choice == '9':
                 # 恢复默认设置
-                config['delays'] = DEFAULT_DELAYS.copy()
+                for key, value in DEFAULT_DELAYS.items():
+                    if isinstance(config['delays'].get(key), dict):
+                        config['delays'][key]['value'] = value
+                    else:
+                        config['delays'][key] = {
+                            "value": value,
+                            "description": get_delay_description(key)
+                        }
                 print("✅ 已恢复默认延迟设置")
                 continue
                 
@@ -1048,7 +1080,7 @@ def edit_delays(config):
                 }
                 
                 delay_key = delay_keys[choice]
-                current_value = config['delays'].get(delay_key, DEFAULT_DELAYS[delay_key])
+                current_value = get_delay_value(config['delays'], delay_key)
                 
                 # 显示当前值和默认值
                 print(f"\n当前值: {current_value}秒")
@@ -1063,8 +1095,15 @@ def edit_delays(config):
                         if new_value < 0:
                             print("❌ 延迟时间不能为负数")
                             continue
-                            
-                        config['delays'][delay_key] = new_value
+                        
+                        # 更新配置（支持新旧两种格式）
+                        if isinstance(config['delays'].get(delay_key), dict):
+                            config['delays'][delay_key]['value'] = new_value
+                        else:
+                            config['delays'][delay_key] = {
+                                "value": new_value,
+                                "description": get_delay_description(delay_key)
+                            }
                         print(f"✅ 已更新 {delay_key} 延迟为 {new_value}秒")
                     except ValueError:
                         print("❌ 请输入有效的数字")
@@ -1076,6 +1115,32 @@ def edit_delays(config):
             return
         except Exception as e:
             print(f"❌ 输入错误: {str(e)}")
+
+def get_delay_value(delay_config, key):
+    """从配置中获取延迟值，支持新旧两种格式"""
+    if key in delay_config:
+        # 新格式：{"value": 0.02, "description": "..."}
+        if isinstance(delay_config[key], dict) and 'value' in delay_config[key]:
+            return delay_config[key]['value']
+        # 旧格式：直接数值
+        elif isinstance(delay_config[key], (int, float)):
+            return delay_config[key]
+    # 默认值
+    return DEFAULT_DELAYS[key]
+
+def get_delay_description(key):
+    """获取延迟配置的描述文本"""
+    descriptions = {
+        "window_focus": "窗口前置后等待时间，值太小可能导致窗口未完全激活就开始后续操作",
+        "mouse_move": "鼠标移动后等待时间，值太小可能导致点击位置不准确",
+        "mouse_down": "鼠标按下后等待时间，影响点击的识别效果",
+        "buy_button": "购买按钮点击前等待时间，值太小可能导致点击不到正确位置",
+        "buy_complete": "购买后等待时间，值太小可能导致购买失败或界面未完全刷新",
+        "esc_key": "ESC按键后等待时间，值太小可能导致ESC键未生效就进行下一步",
+        "loop_interval": "每次循环等待时间，值太小会增加CPU占用，值太大会降低响应速度",
+        "main_loop": "大循环等待时间，值越小检测价格越频繁，但CPU占用更高"
+    }
+    return descriptions.get(key, "延迟时间配置")
 
 def print_price_stats():
     """统计并显示本次日志的价格数据"""
