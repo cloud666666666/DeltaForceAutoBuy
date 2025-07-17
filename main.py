@@ -308,8 +308,8 @@ def take_screenshot(region):
     except Exception as e:
         return None
 
-def getCardPrice(price_region=None, coords=None):
-    """获取当前卡片价格"""
+def getCardPrice(price_region=None, coords=None, debug_mode=True):
+    """获取当前卡片价格，并可选择显示调试信息"""
     try:
         if coords is None:
             coords = get_game_coordinates()
@@ -319,6 +319,7 @@ def getCardPrice(price_region=None, coords=None):
         offset_x = coords['offset_x']
         offset_y = coords['offset_y']
         
+        # 确定价格识别区域
         if price_region and price_region.get('top_left') and price_region.get('bottom_right'):
             top_left = price_region['top_left']
             bottom_right = price_region['bottom_right']
@@ -344,9 +345,37 @@ def getCardPrice(price_region=None, coords=None):
             region_top = offset_y + int(game_height * 0.27)
             region = (region_left, region_top, region_width, region_height)
         
-        screenshot = take_screenshot(region=region)
-        if screenshot is None:
-            return None
+        # 截取整个游戏窗口
+        if debug_mode:
+            full_game_region = (offset_x, offset_y, game_width, game_height)
+            full_screenshot = take_screenshot(region=full_game_region)
+            
+            if full_screenshot is None:
+                return None
+                
+            # 在全屏截图上画出识别区域的红色框
+            roi_x = region_left - offset_x
+            roi_y = region_top - offset_y
+            roi_w = region_width
+            roi_h = region_height
+            
+            # 在全屏截图上画红框
+            cv2.rectangle(full_screenshot, 
+                         (roi_x, roi_y), 
+                         (roi_x + roi_w, roi_y + roi_h), 
+                         (0, 0, 255), 2)  # 红色，线宽2
+            
+            # 从全屏截图中提取ROI区域进行识别
+            roi_screenshot = full_screenshot[roi_y:roi_y+roi_h, roi_x:roi_x+roi_w]
+            
+            # 显示调试窗口
+            cv2.imshow("游戏窗口 - 价格识别区域", full_screenshot)
+            cv2.waitKey(1)  # 显示1毫秒，不阻塞程序
+        else:
+            # 直接截取识别区域
+            roi_screenshot = take_screenshot(region=region)
+            if roi_screenshot is None:
+                return None
         
         # 图像预处理，提高OCR识别成功率
         def preprocess_image(img):
@@ -366,7 +395,7 @@ def getCardPrice(price_region=None, coords=None):
             return cleaned
         
         # 预处理图像
-        processed_img = preprocess_image(screenshot)
+        processed_img = preprocess_image(roi_screenshot)
         
         # 优化后的OCR识别方法 - 只使用最成功的配置
         ocr_configs = [
@@ -380,7 +409,7 @@ def getCardPrice(price_region=None, coords=None):
         
         # 尝试原始图像和预处理图像
         images_to_try = [
-            (screenshot, "原始"),
+            (roi_screenshot, "原始"),
             (processed_img, "预处理")
         ]
         
@@ -533,7 +562,7 @@ def getCardName(name_region=None, coords=None):
         print(f"[错误] 获取卡片名称失败: {str(e)}")
         return ""
 
-def price_check_flow(card_info, force_buy=False):
+def price_check_flow(card_info, force_buy=False, debug_mode=True):
     """价格检查主流程"""
     global is_paused
     
@@ -583,7 +612,7 @@ def price_check_flow(card_info, force_buy=False):
         
         while current_price is None and attempt < max_attempts:
             # time.sleep(0.3)  # 每次尝试间隔0.3秒
-            current_price = getCardPrice(detail_price_region, coords)
+            current_price = getCardPrice(detail_price_region, coords, debug_mode=debug_mode)
             attempt += 1
             
             # 如果用户按了停止键，立即退出
@@ -936,6 +965,19 @@ def main():
     print(f"  开始时间: {start_time}")
     print(f"  运行时长: {run_duration}分钟")
     
+    # 询问是否启用调试模式
+    debug_mode = False
+    try:
+        debug_choice = input("\n是否启用调试模式? (y/回车跳过): ").strip().lower()
+        if debug_choice == 'y':
+            debug_mode = True
+            print("✅ 已启用调试模式，将显示识别区域")
+        else:
+            print("❌ 调试模式已关闭")
+    except KeyboardInterrupt:
+        print("\n程序退出")
+        return
+    
     # 询问是否需要编辑配置
     try:
         edit_choice = input("\n是否需要修改配置? (y/回车跳过): ").strip().lower()
@@ -993,6 +1035,8 @@ def main():
     print("  Ctrl+Shift+Q - 紧急退出")
     print("  ⏰ 开始时间: 到达时自动启动购买")
     print("  🔴 运行时长: 到时自动停止程序")
+    if debug_mode:
+        print("  🔍 调试模式: 已启用，将显示识别区域")
     print("\n等待按键或定时启动...")
     
     # 检查是否有门卡需要定时启动
@@ -1025,7 +1069,7 @@ def main():
                     if cards_to_buy:
                         loop_run_duration = float(cards_to_buy[0].get('runDuration', 1))
                     else:
-                        loop_run_duration = 1
+                        loop_run_duration = 1.0
             
             # 检查运行时长是否到达
             if is_running:
@@ -1034,13 +1078,16 @@ def main():
                     if cards_to_buy:
                         loop_run_duration = float(cards_to_buy[0].get('runDuration', 1))
                     else:
-                        loop_run_duration = 1
-                elapsed = (time.time() - loop_start_time) / 60.0
-                if elapsed >= loop_run_duration:
-                    print(f"\n🔴 已运行 {loop_run_duration} 分钟，自动停止程序！")
-                    stop_loop()
-                    loop_start_time = None
-                    loop_run_duration = None
+                        loop_run_duration = 1.0
+                
+                # 确保loop_run_duration不为None
+                if loop_run_duration is not None:
+                    elapsed = (time.time() - loop_start_time) / 60.0
+                    if elapsed >= loop_run_duration:
+                        print(f"\n🔴 已运行 {loop_run_duration} 分钟，自动停止程序！")
+                        stop_loop()
+                        loop_start_time = None
+                        loop_run_duration = None
             else:
                 loop_start_time = None
                 loop_run_duration = None
@@ -1050,7 +1097,7 @@ def main():
                 while i < len(cards_to_buy) and is_running:
                     card_info = cards_to_buy[i]
                     try:
-                        result = price_check_flow(card_info, force_buy=False)
+                        result = price_check_flow(card_info, force_buy=False, debug_mode=debug_mode)
                         if result:
                             card_info['buyAmount'] -= 1
                             print(f"✅ 购买成功！剩余需购买数量: {card_info['buyAmount']}")
@@ -1079,6 +1126,9 @@ def main():
     except Exception as e:
         print(f"\n❌ 程序错误: {str(e)}")
     finally:
+        # 关闭所有OpenCV窗口
+        if debug_mode:
+            cv2.destroyAllWindows()
         print("程序结束")
 
 if __name__ == "__main__":
